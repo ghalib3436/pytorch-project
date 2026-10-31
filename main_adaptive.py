@@ -1,4 +1,6 @@
+from pathlib import Path
 import queue
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -12,7 +14,15 @@ from torchvision import models
 
 
 weights = models.MobileNet_V3_Small_Weights.DEFAULT
-model = models.mobilenet_v3_small(weights=weights).eval()
+if getattr(sys, "frozen", False):
+    bundled_weights = Path(sys._MEIPASS) / "model" / "mobilenet_v3_small-047dcff4.pth"
+    model = models.mobilenet_v3_small(weights=None)
+    model.load_state_dict(
+        torch.load(bundled_weights, map_location="cpu", weights_only=True)
+    )
+else:
+    model = models.mobilenet_v3_small(weights=weights)
+model = model.eval()
 preprocess = weights.transforms()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
